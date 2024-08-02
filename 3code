@@ -1,7 +1,7 @@
 Q1
 
 
-
+ 
 import matplotlib.pyplot as plt
 
 def plot_flight_paths(flight_paths):
