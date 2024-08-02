@@ -1,0 +1,252 @@
+Q1
+
+
+
+#include <iostream>
+#include <vector>
+#include <tuple>
+#include <fstream>
+
+using namespace std;
+
+typedef vector<tuple<int, int>> FlightPath;
+
+void plot_flights(const vector<FlightPath>& flights) {
+    ofstream gnuplotFile("flights.gnuplot");
+
+    gnuplotFile << "set title 'Flight Paths'\n";
+    gnuplotFile << "set xrange [0:5]\n";
+    gnuplotFile << "set yrange [0:5]\n";
+    gnuplotFile << "set xlabel 'X'\n";
+    gnuplotFile << "set ylabel 'Y'\n";
+    gnuplotFile << "set grid\n";
+    gnuplotFile << "plot ";
+
+    for (size_t i = 0; i < flights.size(); ++i) {
+        gnuplotFile << "'-' with linespoints lw 2 title 'Flight " << i + 1 << "'";
+        if (i != flights.size() - 1) {
+            gnuplotFile << ", ";
+        }
+    }
+    gnuplotFile << "\n";
+
+    for (const auto& flight : flights) {
+        for (const auto& [x, y] : flight) {
+            gnuplotFile << x << " " << y << "\n";
+        }
+        gnuplotFile << "e\n";
+    }
+
+    gnuplotFile.close();
+    system("gnuplot -p 'flights.gnuplot'");
+}
+
+int main() {
+    int numFlights;
+    cout << "Enter the number of flights: ";
+    cin >> numFlights;
+
+    vector<FlightPath> flights(numFlights);
+
+    for (int i = 0; i < numFlights; ++i) {
+        int numCoordinates;
+        cout << "Enter the number of coordinates for Flight " << i + 1 << ": ";
+        cin >> numCoordinates;
+
+FlightPath path(numCoordinates);
+        for (int j = 0; j < numCoordinates; ++j) {
+            int x, y;
+            cout << "Enter coordinate " << j + 1 << " for Flight " << i + 1 << " (format: x,y): ";
+            char comma;
+            cin >> x >> comma >> y;
+            path[j] = make_tuple(x, y);
+        }
+        flights[i] = path;
+    }
+
+    plot_flights(flights);
+
+    return 0;
+}
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Q2
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+void distribute_apples(const vector<int>& apples, vector<int>& ram, vector<int>& sham, vector<int>& rahim) {
+    int total_amount = 100;
+    int ram_share = 50, sham_share = 30, rahim_share = 20;
+
+    int sum_ram = 0, sum_sham = 0, sum_rahim = 0;
+    for (int weight : apples) {
+        double ram_ratio = sum_ram / (double)ram_share;
+        double sham_ratio = sum_sham / (double)sham_share;
+        double rahim_ratio = sum_rahim / (double)rahim_share;
+
+        if (ram_ratio <= sham_ratio && ram_ratio <= rahim_ratio) {
+            ram.push_back(weight);
+            sum_ram += weight;
+        } else if (sham_ratio <= ram_ratio && sham_ratio <= rahim_ratio) {
+            sham.push_back(weight);
+            sum_sham += weight;
+        } else {
+            rahim.push_back(weight);
+            sum_rahim += weight;
+        }
+    }
+}
+
+void print_distribution(const vector<int>& person, const string& name) {
+    cout << name << " : ";
+    for (size_t i = 0; i < person.size(); ++i) {
+        if (i > 0) cout << ", ";
+        cout << person[i];
+    }
+    cout << endl;
+}
+
+int main() {
+    vector<int> apples;
+    int weight;
+
+    cout << "Enter apple weight in gram (-1 to stop): ";
+    while (cin >> weight && weight != -1) {
+        apples.push_back(weight);
+        cout << "Enter apple weight in gram (-1 to stop): ";
+    }
+
+    sort(apples.rbegin(), apples.rend()); // Sort in descending order
+
+    vector<int> ram, sham, rahim;
+    distribute_apples(apples, ram, sham, rahim);
+
+    cout << "Distribution Result:" << endl;
+    print_distribution(ram, "Ram");
+    print_distribution(sham, "Sham");
+    print_distribution(rahim, "Rahim");
+
+    return 0;
+}
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Q3
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <tuple>
+#include <set>
+
+using namespace std;
+
+typedef tuple<int, int> Position;
+
+void find_paths(Position castle, const vector<Position>& soldiers, vector<Position>& path, set<vector<Position>>& unique_paths);
+void move_and_kill(Position& castle, vector<Position>& soldiers, vector<Position>& path, int& direction);
+void print_paths(const set<vector<Position>>& paths);
+
+bool is_soldier_at(Position pos, const vector<Position>& soldiers) {
+    return find(soldiers.begin(), soldiers.end(), pos) != soldiers.end();
+}
+
+void remove_soldier(Position pos, vector<Position>& soldiers) {
+    soldiers.erase(remove(soldiers.begin(), soldiers.end(), pos), soldiers.end());
+}
+
+void move_and_kill(Position& castle, vector<Position>& soldiers, vector<Position>& path, int& direction) {
+    int row = get<0>(castle);
+    int col = get<1>(castle);
+
+    // Move front until a soldier is found or the edge of the board is reached
+    while (true) {
+        if (direction == 0) row++;    // Moving down
+        else if (direction == 1) col++; // Moving right
+        else if (direction == 2) row--; // Moving up
+        else if (direction == 3) col--; // Moving left
+
+        if (row < 1 || row > 8 || col < 1 || col > 8) break; // Edge of the board
+
+        Position next_pos = make_tuple(row, col);
+        if (is_soldier_at(next_pos, soldiers)) {
+            castle = next_pos;
+            path.push_back(castle);
+            remove_soldier(castle, soldiers);
+            direction = (direction + 3) % 4; // Turn left
+            break;
+        }
+    }
+}
+
+void find_paths(Position castle, const vector<Position>& soldiers, vector<Position>& path, set<vector<Position>>& unique_paths) {
+    vector<Position> current_soldiers = soldiers; // Copy of soldiers
+    int direction = 1; // Initially moving right
+
+    while (!current_soldiers.empty()) {
+        move_and_kill(castle, current_soldiers, path, direction);
+        if (castle == path.front()) {
+            if (unique_paths.find(path) == unique_paths.end()) {
+                unique_paths.insert(path);
+            }
+            break;
+        }
+    }
+}
+
+void print_paths(const set<vector<Position>>& paths) {
+    int path_count = 1;
+    for (const auto& path : paths) {
+        cout << "Path " << path_count << ":\n=======\n";
+        for (size_t j = 0; j < path.size(); ++j) {
+            if (j == 0)
+                cout << "Start: (" << get<0>(path[j]) << "," << get<1>(path[j]) << ")\n";
+            else
+                cout << "Kill (" << get<0>(path[j]) << "," << get<1>(path[j]) << "). Turn Left\n";
+        }
+        cout << "Arrive (" << get<0>(path[0]) << "," << get<1>(path[0]) << ")\n";
+        ++path_count;
+    }
+}
+
+int main() {
+    int n;
+    cout << "find_my_home_castle –soldiers ";
+    cin >> n;
+
+    vector<Position> soldiers(n);
+    for (int i = 0; i < n; ++i) {
+        int x, y;
+        cout  << i + 1 << ": ";
+        cin >> x >> y;
+        soldiers[i] = make_tuple(x, y);
+    }
+
+    int cx, cy;
+  
+    cin >> cx >> cy;
+    Position castle = make_tuple(cx, cy);
+
+  
+
+    set<vector<Position>> unique_paths;
+    vector<Position> path;
+    path.push_back(castle);
+
+    find_paths(castle, soldiers, path, unique_paths);
+    print_paths(unique_paths);
+
+    return 0;
+}
