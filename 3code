@@ -94,7 +94,7 @@ def main():
                 break
             apples.append(weight)
         except ValueError:
-            print("Please enter a valid number.")
+            print("enter a valid number.")
 
     ram, sham, rahim = distribute_apples(apples)
 
@@ -146,7 +146,7 @@ def find_paths(soldiers, castle):
     return paths
 
 def main():
-    num_soldiers = int(input("Please enter the number of soldiers: "))
+    num_soldiers = int(input("enter the number of soldiers: "))
     soldiers = []
     for i in range(num_soldiers):
         x, y = map(int, input(f"Enter the coordinates of the soldier {i+1}: ").split())
